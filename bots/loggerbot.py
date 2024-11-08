@@ -2,14 +2,14 @@ from player import Bot
 from game import State
 import random
 
+# run this with python competition.py 10000 bots/intermediates.py bots/loggerbot.py
+# Then check logs/loggerbot.log   Delete that file before running though
 
 class LoggerBot(Bot):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.vote_record = {}  # 记录每个玩家投反对票的次数
-        self.missions_been_on = {}  # 记录每个玩家参与的任务次数
-        self.failed_missions_been_on = {}  # 记录每个玩家参与且任务失败的次数
 
+    # Loggerbot makes very simple playing strategy.
+    # We're not really trying to win here, but just to observer the other players
+    # without disturbing them too much....
     def select(self, players, count):
         return [self] + random.sample(self.others(), count - 1)
 
@@ -20,38 +20,28 @@ class LoggerBot(Bot):
         return True
 
     def mission_total_suspect_count(self, team):
-        suspect_count = 0
-        for player in team:
-            if self.vote_record.get(player, 0) > 3:
-                suspect_count += 1
-        return suspect_count
+        return 0 # TODO complete this function
 
     def onVoteComplete(self, votes):
-        for player, vote in zip(self.game.players, votes):
-            if player not in self.vote_record:
-                self.vote_record[player] = 0
-            if not vote:
-                self.vote_record[player] += 1
-
+        """Callback once the whole team has voted.
+        @param votes        Boolean votes for each player (ordered).
+        """
+        pass # TODO complete this function
     def onGameRevealed(self, players, spies):
-        self.players = players
-        self.spies = spies
-        self.vote_record = {player: 0 for player in players}
-        self.missions_been_on = {player: 0 for player in players}
-        self.failed_missions_been_on = {player: 0 for player in players}
-
+        """This function will be called to list all the players, and if you're
+        a spy, the spies too -- including others and yourself.
+        @param players  List of all players in the game including you.
+        @param spies    List of players that are spies, or an empty list.
+        """
+        pass # TODO complete this function
     def onMissionComplete(self, num_sabotages):
-        if num_sabotages > 0:
-            for player in self.game.team:
-                self.failed_missions_been_on[player] += 1
-        for player in self.game.team:
-            self.missions_been_on[player] += 1
-
+        """Callback once the players have been chosen.
+        @param num_sabotages    Integer how many times the mission was sabotaged.
+        """
+        pass # TODO complete this function
     def onGameComplete(self, win, spies):
-        self.log.info(f"Game completed. Resistance {'won' if win else 'lost'}.")
-        self.log.info(f"Spies were: {', '.join([str(spy) for spy in spies])}")
-        for player in self.players:
-            self.log.info(f"Player {player}:")
-            self.log.info(f"  Voted down count: {self.vote_record[player]}")
-            self.log.info(f"  Missions participated: {self.missions_been_on[player]}")
-            self.log.info(f"  Failed missions participated: {self.failed_missions_been_on[player]}")
+        """Callback once the game is complete, and everything is revealed.
+        @param win          Boolean true if the Resistance won.
+        @param spies        List of only the spies in the game.
+        """
+        pass # TODO complete this function (in challenge 2)
