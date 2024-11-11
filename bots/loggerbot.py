@@ -3,6 +3,8 @@
 from player import Bot
 from game import State
 import random
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 仅显示严重错误
 
 
 class LoggerBot(Bot):
