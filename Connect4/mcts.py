@@ -88,19 +88,64 @@ def build_initial_blank_mcts_tree():
 
 
 def expand_mcts_tree_once(mcts_node):
-    # this is the main MCTS algorithm.  On entry, mcts_node should be the top-level node of the tree
-    # This function modifies the mcts tree, expanding it by adding new children as appropriate, and
-    # updating the win/loss statistics of all nodes along the path chosen.
-
     # 1. Selection
-    # TODO
+    # Traverse down the tree to select a node to expand. We keep moving down the tree
+    # by selecting children nodes with the highest UCB1 score until we reach a node without children.
+    while mcts_node.children is not None:
+        assert (not mcts_node.is_terminal_node())  # Ensure that we are not at a terminal node
+        terminal_state_children = [child for child in mcts_node.children if child.is_terminal_node()]
+
+        # If there are terminal children nodes (end states), select one of them.
+        if terminal_state_children:
+            mcts_node = terminal_state_children[0]
+        else:
+            # Calculate UCB1 scores for all children nodes to decide the next node to explore
+            ucts = [child.get_ucb1_score() for child in mcts_node.children]  # Select the highest UCB1 score
+            if None in ucts:
+                # If there are unvisited nodes (UCB1 score is None), randomly select one to expand
+                unvisited_children = [mcts_node.children[i] for i, x in enumerate(ucts) if x is None]
+                mcts_node = random.choice(unvisited_children)
+            else:
+                # If all nodes have been visited, select the child with the highest UCB1 score
+                mcts_node = mcts_node.children[np.argmax(ucts)]
 
     # 2. Expansion
-    # TODO
+    # If the selected node is not a terminal node, expand it by adding all possible moves as children nodes.
+    if not mcts_node.is_terminal_node():
+        moves = mcts_node.board.valid_moves()  # Get all valid moves for the current board state
+        assert len(moves) > 0  # Ensure there are valid moves
+        assert mcts_node.children is None  # Ensure this node has no children yet
 
-    # 3. Playout (also called "Simulation" or "Random Rollout")
-    # TODO
+        # Generate successor states (child nodes) for each valid move
+        successor_states = [(mcts_node.board.play(move), move) for move in moves]
+        # Create new MCTS_Node instances for each successor state, with the current node as their parent
+        new_children = [MCTS_Node(board, move=move, parent=mcts_node) for (board, move) in successor_states]
+        mcts_node.set_children(new_children)  # Set the newly created nodes as children of the current node
+
+    # 3. Playout
+    # Perform a playout (simulation) from the current node to determine a winner
+    if mcts_node.is_terminal_node():
+        # If the current node is terminal, get the victorious player
+        victorious_player = mcts_node.board.get_victorious_player()
+        assert mcts_node.board.get_victorious_player() in [mcts_node.board.get_player_who_just_moved(), 0]
+    else:
+        # If it's not a terminal node, choose a random child node and perform a playout from there
+        mcts_node = random.choice(mcts_node.children)
+        if mcts_node.is_terminal_node():
+            # If the chosen child is a terminal node, get the victorious player
+            victorious_player = mcts_node.board.get_victorious_player()
+            assert mcts_node.board.get_victorious_player() in [mcts_node.board.get_player_who_just_moved(), 0]
+        else:
+            # If the chosen child is not a terminal node, perform a random playout until the game ends
+            victorious_player = random_play(mcts_node.board)
 
     # 4. Backpropagation
-    # TODO
-    return
+    # Backpropagate the results of the playout up the tree, updating visit counts and win counts.
+    while mcts_node is not None:
+        mcts_node.games += 1  # Increment the visit count for the node
+        # If the victorious player is the player who just moved, update the win count for that player
+        if victorious_player != 0 and mcts_node.board.get_player_who_just_moved() == victorious_player:
+            mcts_node.wins_for_player_just_moved += 1
+        mcts_node = mcts_node.parent  # Move up to the parent node and continue backpropagation
+
+
