@@ -532,7 +532,7 @@ class ResistanceCompetitionHandler(CompetitionRunner):
                     g.file.write('[%s] ' % user + ' '.join(msg.params[1:])+'\n')
                     g.file.flush()
 
-                # Check if this is a report message about sabotages in
+                # Check if this is a img message about sabotages in
                 # games played between humans alone or with bots.
                 if g.channel == channel and msg.params[1].upper() == 'SABOTAGES':
                     try:
